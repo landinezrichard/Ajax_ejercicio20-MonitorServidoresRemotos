@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Ejercicio 20 - Monitorizar</title>
+
+<script type="text/javascript" src="util.js"></script>
+<script type="text/javascript">
+var nodos = [{"nombre": "Google", "url": "http://www.google.com"}, {"nombre": "Yahoo", "url": "http://www.yahoo.com"},
+             {"nombre": "MSN", "url": "http://www.msn.com"}, {"nombre": "eBay", "url": "http://www.ebay.com"},
+             {"nombre": "YouTube", "url": "http://www.youtube.com"}, {"nombre": "Flickr", "url": "http://www.flickr.com"}];
+var intervalo;
+
+function monitoriza() {
+  intervalo = setInterval(monitorizaNodos, 1000);
+}
+
+function detiene() {
+  clearInterval(intervalo);
+}
+
+function monitorizaNodos() {
+  for(var i=0; i<nodos.length; i++) {
+    document.getElementById("nodo"+i).style.border = "3px solid #000000";
+    var ping = new net.CargadorContenidosCompleto(nodos[i].url, procesaPing, noDisponible, "HEAD");
+  }
+}
+
+function procesaPing() {
+  if(new Date(this.req.getResponseHeader("Date"))) {
+    var numeroNodo = calculaNumeroNodo(this.url);
+    document.getElementById("nodo"+numeroNodo).style.border = "3px solid #00FF00";
+    document.getElementById("nodo"+numeroNodo).className = "on";
+    document.getElementById("datos"+numeroNodo).innerHTML = this.req.getResponseHeader("Server");
+  }
+}
+
+function noDisponible() {
+  var numeroNodo = calculaNumeroNodo(this.url);
+  document.getElementById("nodo"+numeroNodo).style.border = "3px solid #FF0000";
+  document.getElementById("nodo"+numeroNodo).className = "off";
+}
+
+function calculaNumeroNodo(url) {
+  for(var i=0; i<nodos.length; i++) {
+    if(nodos[i].url == url) {
+      return i;
+    }
+  }
+}
+
+window.onload = function() {
+  // Crear elemento de tipo <div> para mostrar cada uno de los nodos
+  for(i=0; i<nodos.length; i++) {
+    var nodo = document.createElement("div");
+    nodo.id = "nodo"+i;
+    nodo.innerHTML = "<strong>" + nodos[i].nombre + "</strong><br>" + nodos[i].url + "<span id=\"datos"+i+"\"></span>";
+    document.getElementById("mapa_red").appendChild(nodo);
+    document.getElementById("nodo"+i).className = "normal";
+  }
+  
+  // Establecer los eventos en los botones
+  document.getElementById("monitoriza").onclick = monitoriza;
+  document.getElementById("detiene").onclick = detiene;
+
+}
+
+</script>
+
+<style type="text/css">
+body {font-size:14px; font-family:Arial, Helvetica, sans-serif;}
+.normal, .consulta, .on, .off {width: 140px; text-align: center; margin: .5em; padding: .5em; }
+form {display: inline; }
+.normal {background-color: #FFFFFF; border: 3px solid #C0C0C0;}
+.consulta {border:3px solid #000000;}
+.on {background-color: #00CC00; border: 3px solid #00FF00;}
+.off {background-color: #CC0000; border: 3px solid #FF0000;}
+#mapa_red {border:5px solid #D0D0D0; float: left; padding: 1em 0; margin: 1em 0; width: 50%;}
+#mapa_red div { float: left; margin: 1em; height: 5em; width: 35%;}
+div span {display:block; padding:.3em;}
+</style>
+
+</head>
+
+<body>
+<h1>Consola de monitorización</h1>
+
+<form>
+  <input type="button" id="monitoriza" value="Monitorizar"></input>
+  <input type="button" id="detiene" value="Detener"></input>
+</form>
+
+<div id="mapa_red"></div>
+
+</body>
+</html>

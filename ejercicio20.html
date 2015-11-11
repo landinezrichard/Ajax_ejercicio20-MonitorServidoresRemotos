@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Ejercicio 20 - Monitorizar</title>
+
+<script type="text/javascript">
+var nodos = [{"nombre": "Google", "url": "http://www.google.com"}, {"nombre": "Yahoo", "url": "http://www.yahoo.com"},
+             {"nombre": "MSN", "url": "http://www.msn.com"}, {"nombre": "eBay", "url": "http://www.ebay.com"},
+             {"nombre": "YouTube", "url": "http://www.youtube.com"}, {"nombre": "Flickr", "url": "http://www.flickr.com"}];
+
+	//La variable intervalo se usa para detener las peticiones al servidor.
+	var intervalo = null;	
+	
+	var net = new Object();
+ 
+	net.READY_STATE_UNINITIALIZED=0; 
+	net.READY_STATE_LOADING=1; 
+	net.READY_STATE_LOADED=2; 
+	net.READY_STATE_INTERACTIVE=3; 
+	net.READY_STATE_COMPLETE=4; 
+	 
+	// Constructor
+	net.CargadorContenidos = function(url, funcion, funcionError, metodo, parametros, contentType, asincrono) {
+	  this.url = url;
+	  this.req = null;
+	  this.onload = funcion;
+	  this.onerror = (funcionError) ? funcionError : this.defaultError;
+	  this.cargaContenidoXML(url, metodo, parametros, contentType, asincrono);
+	}
+	 
+	net.CargadorContenidos.prototype = {
+	  cargaContenidoXML: function(url, metodo, parametros, contentType, asincrono) {
+		if(window.XMLHttpRequest) {
+		  this.req = new XMLHttpRequest();
+		}
+		else if(window.ActiveXObject) {
+		  this.req = new ActiveXObject("Microsoft.XMLHTTP");
+		}
+	 
+		if(this.req) {
+		  try {
+			var loader = this;
+			this.req.onreadystatechange = function() {
+			  loader.onReadyState.call(loader);
+			}
+			this.req.open(metodo, url, (asincrono===false)?false:true);
+			if(contentType) {
+			  this.req.setRequestHeader("Content-Type", contentType);
+			}
+			this.req.send(parametros);
+			} catch(err) {
+			  this.onerror.call(this);
+			}
+		}
+	  },
+	 
+	  onReadyState: function() {
+		var req = this.req; 
+		var ready = req.readyState; 
+		if(ready == net.READY_STATE_COMPLETE) { 
+		  var httpStatus = req.status; 
+		  if(httpStatus == 200 || httpStatus == 0) { 
+			this.onload.call(this);
+		  }
+		  else {
+			this.onerror.call(this);
+		  }
+		}
+	  },
+	 
+	  defaultError: function() {
+		alert("Se ha producido un error al obtener los datos"
+		  + "\n\nreadyState:" + this.req.readyState
+		  + "\nstatus: " + this.req.status
+		  + "\nheaders: " + this.req.getAllResponseHeaders());
+	  }
+	}		
+		
+		
+	function monitorizar(){
+		for(var i=0;i<nodos.length;i++){
+			var nodo=document.getElementById("nodo"+i);
+			var url=nodos[i].url;			
+			nodo.style.border='3px solid #000000';
+			var ping = new net.CargadorContenidos(url,mostrar_datos,respuesta_incorrecta,"HEAD");				
+		}
+	}
+	
+	function mostrar_datos(){
+		var indice=sacarIndice(this.url);
+		var posicion=document.getElementById("datos"+indice);
+		var nodo=document.getElementById("nodo"+indice);
+		if(new Date(this.req.getResponseHeader("Date"))){
+			posicion.innerHTML=this.req.getResponseHeader("Server");
+			nodo.className="on";
+			nodo.style.border='3px solid #00FF00';
+		}
+	}
+	
+	function respuesta_incorrecta(){
+		var indice=sacarIndice(this.url);
+		var nodo=document.getElementById("nodo"+indice);
+		nodo.className="off";
+		nodo.style.border='3px solid #FF0000';
+	}
+
+	function iniciar(){
+		intervalo=setInterval(monitorizar,1000);					
+	}
+
+	function detener(){
+		clearInterval(intervalo);					
+	}
+	
+	function sacarIndice(url){
+		for(var i=0;i<nodos.length;i++){
+			if(nodos[i].url==url){
+				return i;
+			}
+		}
+	}
+
+	window.onload = function() {
+		// Crear elemento de tipo <div> para mostrar cada uno de los nodos
+		var mapa=document.getElementById("mapa_red");
+		var html="";
+		for(var i=0;i<nodos.length;i++){
+			var div=document.createElement("div");
+			div.id="nodo"+i;
+			div.className="normal";
+			div.innerHTML="<strong>"+nodos[i].nombre+"</strong><br/>"+nodos[i].url+"<span id=\"datos"+i+"\"></span>";
+			mapa.appendChild(div);			
+		}
+		
+		// Establecer los eventos en los botones
+		document.getElementById("monitoriza").onclick=iniciar;
+		document.getElementById("detiene").onclick=detener;
+		
+	}
+
+</script>
+
+<style type="text/css">
+body {font-size:14px; font-family:Arial, Helvetica, sans-serif;}
+.normal, .consulta, .on, .off {width: 140px; text-align: center; margin: .5em; padding: .5em; }
+form {display: inline; }
+.normal {background-color: #FFFFFF; border: 3px solid #C0C0C0;}
+.consulta {border:3px solid #000000;}
+.on {background-color: #00CC00; border: 3px solid #00FF00;}
+.off {background-color: #CC0000; border: 3px solid #FF0000;}
+#mapa_red {border:5px solid #D0D0D0; float: left; padding: 1em 0; margin: 1em 0; width: 50%;}
+#mapa_red div { float: left; margin: 1em; height: 5em; width: 35%;}
+div span {display:block; padding:.3em;}
+</style>
+
+</head>
+
+<body>
+<h1>Consola de monitorización</h1>
+
+<form>
+  <input type="button" id="monitoriza" value="Monitorizar"></input>
+  <input type="button" id="detiene" value="Detener"></input>
+</form>
+
+<div id="mapa_red"></div>
+
+</body>
+</html>
